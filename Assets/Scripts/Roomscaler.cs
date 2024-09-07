@@ -12,10 +12,23 @@ public class RoomScaler : MonoBehaviour
     public GameObject objectToBecomeChild = null;
     public GameObject parentObjectForClone = null;
 
-    private GameObject roomObjectCopy = null;
+    // Bu artýk NetworkObject olacak
+    private NetworkObject roomObjectCopy = null;
+
+    // NetworkRunner referansý
+    private NetworkRunner runner;
 
     void Start()
     {
+        // Runner referansýný buluyoruz
+        runner = FindObjectOfType<NetworkRunner>();
+
+        if (runner == null)
+        {
+            Debug.LogError("NetworkRunner bulunamadý. Lütfen sahnede bir NetworkRunner objesi olduðundan emin olun.");
+            return;
+        }
+
         // Coroutine baþlatýyoruz
         StartCoroutine(DelayedRoomScaling());
     }
@@ -28,23 +41,29 @@ public class RoomScaler : MonoBehaviour
 
         // Oda objesini sahnede buluyoruz
         roomObject = GameObject.Find("Room - 36b78a70-9a5f-99fb-4781-7a0a772916c7");
-        NetworkObject networkObject = roomObject.AddComponent<NetworkObject>();
-
 
         if (roomObject != null)
         {
-            // Objeyi bulduk, þimdi onun bir kopyasýný oluþturuyoruz
-            roomObjectCopy = Instantiate(roomObject);
+            NetworkObject networkObject = roomObject.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                networkObject = roomObject.AddComponent<NetworkObject>(); // Eðer NetworkObject yoksa ekliyoruz
+            }
+
+            // Objeyi bulduk, þimdi onun bir kopyasýný Fusion'da oluþturuyoruz
+            roomObjectCopy = runner.Spawn(roomObject, newRoomPosition, Quaternion.identity);
 
             // Kopyanýn pozisyonunu ve boyutunu deðiþtiriyoruz
-            roomObjectCopy.transform.position = newRoomPosition; // Yeni pozisyona taþýyoruz
+            roomObjectCopy.transform.position = newRoomPosition;
             roomObjectCopy.transform.localScale = roomScale; // Odayý küçültüyoruz
         }
         else
         {
             Debug.LogWarning("Room object not found!");
         }
-        if (parentObjectForClone != null)
+
+        // Kopyayý bir parent objeye eklemek isterseniz
+        if (parentObjectForClone != null && roomObjectCopy != null)
         {
             roomObjectCopy.transform.SetParent(parentObjectForClone.transform);
         }
@@ -54,18 +73,19 @@ public class RoomScaler : MonoBehaviour
     {
         if (roomObjectCopy != null)
         {
+            // roomObjectCopy'nin GameObject bileþenine eriþiyoruz
             objectToBecomeChild.transform.SetParent(roomObjectCopy.transform);
             roomObjectCopy.transform.localScale = roomScale1;
             objectToBecomeChild.transform.SetParent(null);
-            roomObjectCopy.SetActive(false);
-            //roomObject.SetActive(false);
-            DisableAllMeshRenderers(roomObject);
+            roomObjectCopy.gameObject.SetActive(false); // Burada GameObject olarak SetActive yapýyoruz
+            DisableAllMeshRenderers(roomObjectCopy.gameObject);
         }
         else
         {
             Debug.LogWarning("Room object copy not found!");
         }
     }
+
     public void DisableAllMeshRenderers(GameObject parentObject)
     {
         // Ýlk önce parent objedeki MeshRenderer'ý kontrol edelim.
@@ -81,5 +101,4 @@ public class RoomScaler : MonoBehaviour
             DisableAllMeshRenderers(child.gameObject);
         }
     }
-
 }
