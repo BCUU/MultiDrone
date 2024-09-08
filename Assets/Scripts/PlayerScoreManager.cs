@@ -1,48 +1,36 @@
-using Fusion;
-using TMPro;
+using TMPro; // TextMeshPro kütüphanesini ekleyin
 using UnityEngine;
 
-public class PlayerScoreManager : NetworkBehaviour
+public class PlayerScoreManager : MonoBehaviour
 {
-    [Networked] public int playerScore { get; set; }
+    public int playerScore = 0; // Skoru tutan deðiþken
+    public TextMeshProUGUI scoreText; // TextMeshPro UI referansý
 
-    // TextMeshPro UI objesi referansý
-    public TextMeshProUGUI scoreText;
+    //void Start()
+    //{
+    //    UpdateScoreText(); // Baþlangýçta skoru güncelle
+    //}
 
-    // Obje aðda spawn edildiðinde çaðrýlan metod
-    public override void Spawned()
+    // Skoru artýran fonksiyon
+    public void IncreaseScore(int amount)
     {
-        Debug.Log("Obje spawn edildi, skoru güncelliyoruz.");
+        playerScore += amount;
+        Debug.Log($"Yeni skor: {playerScore}");
+
+        // UI'daki skoru güncelle
         UpdateScoreText();
     }
-
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void RPC_IncreaseScore(int amount)
-    {
-        Debug.Log("RPC_IncreaseScore çaðrýldý.");
-        if (Object.HasStateAuthority)
-        {
-            playerScore += amount;
-            Debug.Log($"Yeni skor: {playerScore}");
-            UpdateScoreText();
-        }
-        else
-        {
-            Debug.LogWarning("StateAuthority'ye sahip deðilsiniz, skor artýrýlamaz.");
-        }
-    }
-
 
     // Skoru UI'da güncelleyen fonksiyon
     void UpdateScoreText()
     {
         if (scoreText != null)
         {
-            scoreText.text = $"Score: {playerScore}";
+            scoreText.text = playerScore.ToString(); // Sadece sayýyý göster
         }
         else
         {
-            Debug.LogWarning("Score TextMeshPro bileþeni atanmamýþ!");
+            Debug.LogWarning("Skor için TextMeshPro bileþeni atanmamýþ!");
         }
     }
 }
